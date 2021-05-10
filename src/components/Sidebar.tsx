@@ -1,8 +1,11 @@
 import React from 'react'
 import styled from 'styled-components'
 import { variant } from 'styled-system'
+import { useAtom } from 'jotai'
 
 import Icon from 'components/Icon'
+import { directoriesAtom } from 'components/FinderCanvas'
+import { currentDirectory, directoryDerivedState } from 'components/Directory'
 
 const defaultItems = {
   favorites: {
@@ -57,8 +60,9 @@ const StyledActionButton = styled('span')`
 `
 
 type SidebarSectionItems = {
-  icon: string,
-  label: string
+  icon?: string,
+  label?: string,
+  id?: string
 }
 
 type SidebarSectionProps = {
@@ -84,6 +88,7 @@ const StyledDirectoryRow = styled('div')<StyledDirectoryRowProps>(
   { margin: '15px 0px',
     display: 'flex',
     alignItems: 'center',
+    padding: '0px 10px',
 
     span: {
       marginLeft: 10,
@@ -94,28 +99,46 @@ const StyledDirectoryRow = styled('div')<StyledDirectoryRowProps>(
     prop: 'active',
     variants: {
       true: {
-        fontSize: 4,
-        lineHeight: 'heading'
+        background: '#59595a',
+        borderRadius: 5,
+        padding: '6px 10px'
       }
     }
   })
 )
 
+function DirectoryRow({ label, id, icon }: SidebarSectionItems) {
+  const [ { label: directoryLabel } ] = useAtom(directoryDerivedState({ id: id! }))
+
+  return (
+    <StyledDirectoryRow active={label === currentDirectory} key={icon}>
+      <Icon name={icon!} fillColor="#00a4ff" />
+      <span>{label || directoryLabel}</span>
+    </StyledDirectoryRow>
+  )
+}
+
 function SidebarSection({ title, items }: SidebarSectionProps) {
   return (
     <StyledSidebarSection>
       <StyledSidebarSectionTitle>{title}</StyledSidebarSectionTitle>
-      {items.map(({ label, icon }, index) => (
-        <StyledDirectoryRow active={index === 0} key={icon}>
-          <Icon name={icon} fillColor="#00a4ff" />
-          <span>{label}</span>
-        </StyledDirectoryRow>
+      {items.map(({ label, icon = 'directory', id }) => (
+        <DirectoryRow id={id} icon={icon} label={label} />
       ))}
     </StyledSidebarSection>
   )
 }
 
+const SidebarSectionWrapper = styled('div')`
+  height: auto;
+  overflow-y: scroll;
+`
+
 function Sidebar() {
+  const [ directories ] = useAtom(directoriesAtom)
+
+  const directoriesNavItems = directories.map((directory) => ({ id: directory }))
+
   return (
     <StyledSidebar>
       <StyledActionButtons>
@@ -123,7 +146,11 @@ function Sidebar() {
         <StyledActionButton color="#ffb900" />
         <StyledActionButton color="#00cd18" />
       </StyledActionButtons>
-      <SidebarSection {...defaultItems.favorites} />
+      <SidebarSectionWrapper>
+
+        <SidebarSection {...defaultItems.favorites} />
+        <SidebarSection title={currentDirectory} items={directoriesNavItems} />
+      </SidebarSectionWrapper>
     </StyledSidebar>
   )
 }

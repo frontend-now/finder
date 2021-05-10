@@ -2,6 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 
 import Icon from 'components/Icon'
+import { currentDirectory } from 'components/Directory'
 
 type ActionBarProps = {
   className?: string
@@ -12,8 +13,8 @@ function ActionBar({ className }: ActionBarProps) {
     <div className={className}>
       <div className="navSection">
         <Icon name="back" fillColor="#ffffff" />
-        <Icon name="forward" fillColor="#ffffff" />
-        <span>Music</span>
+        <Icon name="forward" strokeColor="#ffffff" fillColor="#ffffff" />
+        <span>{currentDirectory}</span>
       </div>
       <div className="actionsSection">
         <Icon name="grid" data-grid fillColor="#ffffff" />

@@ -5,11 +5,11 @@ import { useAtomCallback } from 'jotai/utils'
 import { usePopper } from 'react-popper'
 import uuid from 'uuid-random'
 
-import Portal from 'components/Portal'
 import Divider from 'components/Divider'
-import { directoriesAtom } from './FinderCanvas'
-import { directoryDerivedState } from './Directory'
-import kebabCase from 'lib/kebabcase'
+import kebabCase from 'lib/kebabCase'
+import Portal from 'components/Portal'
+import { directoriesAtom } from 'components/FinderCanvas'
+import { directoryDerivedState, nameCountHash } from 'components/Directory'
 
 type FinderMenuProps = {
   parentRef: MutableRefObject<any>,
@@ -105,14 +105,22 @@ function FinderMenu({ referenceElement, parentTargetElement }: any) {
   const [ directories ] = useAtom(directoriesAtom)
 
   const createDirectory = useAtomCallback(useCallback((
-    get, set, label: string = 'New'
+    get, set, label?: string
   ) => {
     const newDirectory = uuid()
 
     set(directoriesAtom, [ ...directories, newDirectory ])
 
+    const directoryLabel = label || 'New'
+
+    const nameCount = get(nameCountHash(directoryLabel))[directoryLabel]
+
+    set(nameCountHash(directoryLabel), {
+      [directoryLabel]: nameCount + 1
+    })
+
     set(directoryDerivedState({ id: newDirectory, label }), {
-      label,
+      label: label || `New${nameCount ? nameCount + 1 : ''}`,
       id: newDirectory
     })
   }, [ directories ]))

@@ -1,17 +1,26 @@
-import React, { HTMLAttributes, Ref, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import styled from 'styled-components'
 import { atom, useAtom } from 'jotai'
 import { atomFamily, useAtomCallback } from 'jotai/utils'
 
+import type { HTMLAttributes, Ref } from 'react'
+
 import directoryThumbnail from 'assets/images/directory.svg'
 import InlineLabel from 'components/InlineLabel'
 
-const directories = Array.from(Array(10).keys()).map((i) => i.toString())
+// TODO: Use tree strcture to support nested directories
+const directories = Array.from(Array(1).keys()).map((i) => i.toString())
+
+const nameCountHash = atomFamily((label: string) => atom({
+  [label]: 0
+}))
+
+const currentDirectory = 'Music'
 
 const StyledDirectoryWrapper = styled('div')`
   display: grid;
   grid-gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   height: auto;
   overflow: scroll;
   padding: 25px;
@@ -48,7 +57,7 @@ type Directory = {
 }
 
 const directoryDerivedState = atomFamily(
-  ({ id, label = 'Untitled' }: Directory) => atom({
+  ({ id, label = 'Music' }: Directory) => atom({
     label,
     id
   }),
@@ -83,13 +92,41 @@ function Directory({
   const [ { label } ] = useAtom(directoryDerivedState({ id }))
 
   const renameDirectory = useAtomCallback(useCallback((
-    get, set, newLabel: string = 'Untitled1'
+    get, set, newLabel: string
   ) => {
-    set(directoryDerivedState({ id, label }), {
-      label: newLabel,
+    const labelWithoutTrailingCount = newLabel.replace(/[0-9]/g, '')
+    const trailingCount = Number(newLabel.replace(/^\D+/g, ''))
+
+    const nameCount = get(nameCountHash(labelWithoutTrailingCount))[labelWithoutTrailingCount]
+
+    let currentLabel = ''
+
+    if (nameCount !== undefined) {
+      if (nameCount < trailingCount) {
+        set(nameCountHash(labelWithoutTrailingCount), {
+          [labelWithoutTrailingCount]: trailingCount
+        })
+
+        currentLabel = newLabel
+      } else {
+        set(nameCountHash(labelWithoutTrailingCount), {
+          [labelWithoutTrailingCount]: nameCount + 1
+        })
+
+        currentLabel = `${labelWithoutTrailingCount}${nameCount ? nameCount + 1 : ''}`
+      }
+    } else {
+      set(nameCountHash(newLabel), {
+        [newLabel]: 0
+      })
+      currentLabel = newLabel
+    }
+
+    set(directoryDerivedState({ id }), {
+      label: currentLabel,
       id
     })
-  }, [ id, label ]))
+  }, [ id ]))
 
   return (
     <StyledDirectory
@@ -111,6 +148,12 @@ function Directory({
 
 export default Directory
 
-export { directories, StyledDirectoryWrapper, directoryDerivedState }
+export {
+  directories,
+  StyledDirectoryWrapper,
+  directoryDerivedState,
+  currentDirectory,
+  nameCountHash
+}
 
 export type { DirectoryProps }

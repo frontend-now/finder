@@ -69,6 +69,10 @@ function InlineLabel({
   const parentWrapperRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
+    setValue(text)
+  }, [ text ])
+
+  useEffect(() => {
     if (isEditing) {
       inputRef.current?.focus()
     }
@@ -117,7 +121,7 @@ function InlineLabel({
         hidden={!isEditing}
         active={isEditing}
         value={value}
-        style={{ width: `${Math.ceil(value.length * 1)}ex` }}
+        style={{ width: `${Math.ceil((value.length + 0.2) * 1)}ex` }}
         onChange={(e:any) => setValue(e.target.value)}
       />
     </StyledInlineLabel>
