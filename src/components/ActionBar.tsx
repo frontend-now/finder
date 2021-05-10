@@ -19,7 +19,7 @@ function ActionBar({ className }: ActionBarProps) {
         <Icon name="grid" data-grid fillColor="#ffffff" />
         <Icon name="sort" fillColor="#ffffff" />
         <Icon name="upload" fillColor="#ffffff" />
-        <Icon name="tag" fillColor="#ffffff" />
+        <Icon name="tag" data-tag fillColor="#ffffff" />
         <Icon name="search" fillColor="#ffffff" />
       </div>
     </div>
@@ -29,6 +29,7 @@ function ActionBar({ className }: ActionBarProps) {
 const StyledActionBar = styled(ActionBar)`
   display: flex;
   justify-content: space-between;
+  margin-bottom: 20px;
 
   .navSection, .actionsSection {
     display: flex;
@@ -40,11 +41,11 @@ const StyledActionBar = styled(ActionBar)`
     }
 
     * {
-      margin-right: 10px;
+      margin-right: 20px;
     }
 
-    [data-grid] {
-      margin-right: 30px;
+    [data-grid], [data-tag] {
+      margin-right: 60px;
     }
   }
 `

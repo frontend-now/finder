@@ -1,9 +1,13 @@
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
 import styled from 'styled-components'
+import { useAtom } from 'jotai'
+import { useAtomCallback } from 'jotai/utils'
 import { usePopper } from 'react-popper'
 
 import Portal from 'components/Portal'
 import Divider from 'components/Divider'
+import { directoriesAtom } from './FinderCanvas'
+import { directoryDerivedState } from './Directory'
 
 type FinderMenuProps = {
   parentRef: MutableRefObject<any>,
@@ -24,11 +28,13 @@ function generateGetBoundingClientRect(e: React.MouseEvent<any>) {
 function FinderContextMenu({ parentRef, children }: FinderMenuProps) {
   const [ isActive, setIsActive ] = useState(false)
   const virtualReferenceElement = useRef({} as HTMLElement)
-  const [ popperElement, setPopperElement ] = useState<HTMLElement | null>(null)
+  const parentTargetElement = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     const openMenu = (e: React.MouseEvent<any>) => {
       e.preventDefault()
+
+      parentTargetElement.current = (e.target as HTMLElement).parentElement
       virtualReferenceElement.current.getBoundingClientRect = generateGetBoundingClientRect(e)
 
       setIsActive(true)
@@ -51,17 +57,12 @@ function FinderContextMenu({ parentRef, children }: FinderMenuProps) {
     }
   }, [ parentRef, virtualReferenceElement ])
 
-  // const { styles, attributes } = usePopper(virtualReferenceElement.curr, popperElement, {
-  //   placement: 'right-start',
-  //   strategy: 'fixed'
-  // })
-
   return (
     <Portal>
       {isActive && (
         children({
-          ref: setPopperElement,
-          referenceElement: virtualReferenceElement.current
+          referenceElement: virtualReferenceElement.current,
+          parentTargetElement: parentTargetElement.current
         })
       )}
     </Portal>
@@ -89,22 +90,68 @@ type FinderMenuSection = {
   onClick?: ((e: any) => void)
 }[][]
 
-const finderMenuSections: FinderMenuSection = [
-  [ { label: 'New Folder', onClick: undefined } ],
-  [ { label: 'Get Info', onClick: undefined } ],
-  [ { label: 'View', onClick: undefined },
-    { label: 'Use Groups', onClick: undefined },
-    { label: 'Sort By', onClick: undefined },
-    { label: 'Cleanup', onClick: undefined } ]
-]
-
-function FinderMenu({ referenceElement, ...popoverProps }: any) {
+function FinderMenu({ referenceElement, parentTargetElement }: any) {
   const [ popperElement, setPopperElement ] = useState<HTMLElement | null>(null)
+
+  const isDirectoryClicked = parentTargetElement?.hasAttribute('data-directory-id')
 
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: 'right-start',
     strategy: 'fixed'
   })
+
+  const [ directories ] = useAtom(directoriesAtom)
+
+  const createDirectory = useAtomCallback(useCallback((
+    get, set, label: string = 'New'
+  ) => {
+    const newDirectory = directories.length
+
+    set(directoriesAtom, [ ...directories, newDirectory.toString() ])
+
+    set(directoryDerivedState({ id: newDirectory.toString(), label }), {
+      label,
+      id: newDirectory.toString()
+    })
+  }, [ directories ]))
+
+  const removeDirectory = useAtomCallback(useCallback((
+    get, set
+  ) => {
+    const clickedDirectoryId = parentTargetElement.getAttribute('data-directory-id')
+    const clickedDirectoryIndex = directories.findIndex(
+      (directoryId) => directoryId === clickedDirectoryId
+    )
+    const newDirectories = [ ...directories ]
+    newDirectories.splice(clickedDirectoryIndex, 1)
+
+    set(directoriesAtom, newDirectories)
+  }, [ directories, parentTargetElement ]))
+
+  const duplicateDirectory = useAtomCallback(useCallback((
+    get
+  ) => {
+    const clickedDirectoryId = parentTargetElement.getAttribute('data-directory-id')
+    const clickedDirectory = get(directoryDerivedState({ id: clickedDirectoryId }))
+
+    createDirectory(clickedDirectory.label)
+  }, [ createDirectory, parentTargetElement ]))
+
+  const finderMenuSections: FinderMenuSection = [
+    [ { label: 'New Folder', onClick: () => createDirectory() } ],
+    [ { label: 'Get Info', onClick: undefined } ],
+    [ { label: 'View', onClick: undefined },
+      { label: 'Use Groups', onClick: undefined },
+      { label: 'Sort By', onClick: undefined },
+      { label: 'Cleanup', onClick: undefined } ]
+  ]
+
+  if (isDirectoryClicked) {
+    finderMenuSections[0].push(
+      { label: 'Duplicate', onClick: duplicateDirectory },
+      { label: 'Delete Folder', onClick: removeDirectory }
+    )
+  }
 
   return (
     <StyledFinderMenu ref={setPopperElement} style={styles.popper} {...attributes.popper}>
