@@ -29,7 +29,7 @@ function Icon({ name, size = 16, strokeColor, fillColor, ...other }: IconProps) 
           stroke: strokeColor,
           fill: fillColor
         }}
-        src={reqIcons(`./${name}.svg`).default}
+        src={reqIcons?.(`./${name}.svg`)?.default}
       />
     </i>
   )

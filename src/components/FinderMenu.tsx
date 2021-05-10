@@ -1,13 +1,15 @@
-import React, { MutableRefObject, useCallback, useEffect, useRef, useState } from 'react'
+import React, { MutableRefObject, useCallback, useEffect, useRef, useState, Fragment, Key } from 'react'
 import styled from 'styled-components'
 import { useAtom } from 'jotai'
 import { useAtomCallback } from 'jotai/utils'
 import { usePopper } from 'react-popper'
+import uuid from 'uuid-random'
 
 import Portal from 'components/Portal'
 import Divider from 'components/Divider'
 import { directoriesAtom } from './FinderCanvas'
 import { directoryDerivedState } from './Directory'
+import kebabCase from 'lib/kebabcase'
 
 type FinderMenuProps = {
   parentRef: MutableRefObject<any>,
@@ -86,7 +88,7 @@ const StyledFinderMenu = styled('div')`
 `
 
 type FinderMenuSection = {
-  label: String,
+  label: string,
   onClick?: ((e: any) => void)
 }[][]
 
@@ -105,13 +107,13 @@ function FinderMenu({ referenceElement, parentTargetElement }: any) {
   const createDirectory = useAtomCallback(useCallback((
     get, set, label: string = 'New'
   ) => {
-    const newDirectory = directories.length
+    const newDirectory = uuid()
 
-    set(directoriesAtom, [ ...directories, newDirectory.toString() ])
+    set(directoriesAtom, [ ...directories, newDirectory ])
 
-    set(directoryDerivedState({ id: newDirectory.toString(), label }), {
+    set(directoryDerivedState({ id: newDirectory, label }), {
       label,
-      id: newDirectory.toString()
+      id: newDirectory
     })
   }, [ directories ]))
 
@@ -159,7 +161,7 @@ function FinderMenu({ referenceElement, parentTargetElement }: any) {
         const isLastIndex = index === finderMenuSections.length - 1
 
         return (
-          <>
+          <Fragment key={finderMenuSection[0].label}>
             <div className="finderMenuSection">
               {finderMenuSection.map(({ label, onClick }) => (
                 <div
@@ -167,14 +169,16 @@ function FinderMenu({ referenceElement, parentTargetElement }: any) {
                   onKeyPress={onClick}
                   onClick={onClick}
                   tabIndex={0}
+                  data-testid={kebabCase(label)}
                   className="finderMenuSectionLabel"
+                  key={label as Key}
                 >
                   {label}
                 </div>
               ))}
             </div>
             {!isLastIndex && <Divider />}
-          </>
+          </Fragment>
         )
       })}
     </StyledFinderMenu>

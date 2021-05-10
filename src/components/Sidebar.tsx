@@ -106,7 +106,7 @@ function SidebarSection({ title, items }: SidebarSectionProps) {
     <StyledSidebarSection>
       <StyledSidebarSectionTitle>{title}</StyledSidebarSectionTitle>
       {items.map(({ label, icon }, index) => (
-        <StyledDirectoryRow active={index === 0}>
+        <StyledDirectoryRow active={index === 0} key={icon}>
           <Icon name={icon} fillColor="#00a4ff" />
           <span>{label}</span>
         </StyledDirectoryRow>

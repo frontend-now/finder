@@ -131,7 +131,7 @@ function FinderCanvas() {
 
   return (
     <>
-      <StyledFinderCanvas ref={parentRef}>
+      <StyledFinderCanvas ref={parentRef} data-testid="canvas">
         <StyledActionBar />
 
         <DndContext
@@ -143,12 +143,13 @@ function FinderCanvas() {
           layoutMeasuring={{ strategy: LayoutMeasuringStrategy.Always }}
         >
           <SortableContext items={items}>
-            <StyledDirectoryWrapper>
+            <StyledDirectoryWrapper data-testid="directory-wrapper">
               {items.map((id, index) => (
                 <SortableDirectory
                   id={id}
                   index={index + 1}
                   key={id}
+                  data-testid={id}
                   activeIndex={activeIndex}
                   onRemove={() => setItems(
                     (currentItems) => currentItems.filter((itemId) => itemId !== id)
